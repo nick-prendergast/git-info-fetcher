@@ -1,17 +1,14 @@
 package com.example.gitinfofetcher.Dto;
 
 import com.example.gitinfofetcher.domain.GitHubBranch;
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.Getter;
 
 import java.util.List;
 
 
 public class RepositoryBranchesDto {
-    private String repositoryName;
-    private String ownerLogin;
-    private List<GitHubBranch> branches;
+    private final String repositoryName;
+    private final String ownerLogin;
+    private final List<GitHubBranch> branches;
 
 
     public RepositoryBranchesDto(String repositoryName, String ownerLogin, List<GitHubBranch> branches) {
@@ -32,16 +29,5 @@ public class RepositoryBranchesDto {
         return branches;
     }
 
-    public void setRepositoryName(String repositoryName) {
-        this.repositoryName = repositoryName;
-    }
-
-    public void setOwnerLogin(String ownerLogin) {
-        this.ownerLogin = ownerLogin;
-    }
-
-    public void setBranches(List<GitHubBranch> branches) {
-        this.branches = branches;
-    }
 }
 

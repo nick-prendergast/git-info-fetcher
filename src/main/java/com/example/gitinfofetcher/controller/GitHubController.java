@@ -27,9 +27,9 @@ public class GitHubController {
         logger.info("Request received to list repositories for user: {}", username);
 
         return gitHubService.listUserRepositories(username)
-                .flatMap(repo -> gitHubService.getRepositoryBranches(repo.getOwner().getLogin(), repo.getName())
+                .flatMap(repo -> gitHubService.getRepositoryBranches(repo.getOwner().login(), repo.getName())
                         .collectList()
-                        .map(branches -> new RepositoryBranchesDto(repo.getName(), repo.getOwner().getLogin(), branches))
+                        .map(branches -> new RepositoryBranchesDto(repo.getName(), repo.getOwner().login(), branches))
                 )
                 .doOnComplete(() -> logger.info("Completed listing repositories for user: {}", username))
                 .doOnError(error -> logger.error("Error occurred while listing repositories for user: {}", username, error));
