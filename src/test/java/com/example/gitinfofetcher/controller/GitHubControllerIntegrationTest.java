@@ -1,6 +1,7 @@
 package com.example.gitinfofetcher.controller;
 
 import com.example.gitinfofetcher.TestConfig;
+import com.example.gitinfofetcher.config.WebFluxErrorHandlingConfig;
 import com.example.gitinfofetcher.service.GitHubService;
 import com.github.tomakehurst.wiremock.client.WireMock;
 import com.github.tomakehurst.wiremock.junit5.WireMockTest;
@@ -10,6 +11,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.reactive.WebFluxTest;
 import org.springframework.context.annotation.Import;
 import org.springframework.core.io.ClassPathResource;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.reactive.server.WebTestClient;
 
@@ -19,7 +21,7 @@ import java.nio.file.Files;
 import static com.github.tomakehurst.wiremock.client.WireMock.*;
 
 @WebFluxTest(controllers = GitHubController.class)
-@Import({GitHubService.class, TestConfig.class})
+@Import({GitHubService.class, TestConfig.class, WebFluxErrorHandlingConfig.class})
 @WireMockTest(httpPort = 8089)
 public class GitHubControllerIntegrationTest {
 
@@ -31,55 +33,43 @@ public class GitHubControllerIntegrationTest {
 
     @BeforeEach
     public void setUp() {
+        stubForRepositoryBranches("git-consortium", "git-consortium.json");
+        stubForRepositoryBranches("hello-worId", "hello-worId.json");
+        stubForRepositoryBranches("Hello-World", "Hello-World.json");
+        stubForRepositoryBranches("octocat.github.io", "octocat.github.io.json");
+        stubForRepositoryBranches("Spoon-Knife", "Spoon-Knife.json");
+        stubForRepositoryBranches("test-repo1", "test-repo1.json");
 
-        WireMock.stubFor(WireMock.get(WireMock.urlPathMatching("/repos/octocat/git-consortium/branches"))
-                .willReturn(WireMock.aResponse()
-                        .withStatus(200)
-                        .withHeader("Content-Type", "application/json")
-                        .withBodyFile("json/git-consortium.json"))); // Change the file name as needed
-
-        WireMock.stubFor(WireMock.get(WireMock.urlPathMatching("/repos/octocat/hello-worId/branches"))
-                .willReturn(WireMock.aResponse()
-                        .withStatus(200)
-                        .withHeader("Content-Type", "application/json")
-                        .withBodyFile("json/hello-worId.json"))); // Change the file name as needed
-
-        WireMock.stubFor(WireMock.get(WireMock.urlPathMatching("/repos/octocat/Hello-World/branches"))
-                .willReturn(WireMock.aResponse()
-                        .withStatus(200)
-                        .withHeader("Content-Type", "application/json")
-                        .withBodyFile("json/Hello-World.json"))); // Change the file name as needed
-
-        WireMock.stubFor(WireMock.get(WireMock.urlPathMatching("/repos/octocat/octocat.github.io/branches"))
-                .willReturn(WireMock.aResponse()
-                        .withStatus(200)
-                        .withHeader("Content-Type", "application/json")
-                        .withBodyFile("json/octocat.github.io.json"))); // Change the file name as needed
-
-        WireMock.stubFor(WireMock.get(WireMock.urlPathMatching("/repos/octocat/Spoon-Knife/branches"))
-                .willReturn(WireMock.aResponse()
-                        .withStatus(200)
-                        .withHeader("Content-Type", "application/json")
-                        .withBodyFile("json/Spoon-Knife.json"))); // Change the file name as needed
-
-        WireMock.stubFor(WireMock.get(WireMock.urlPathMatching("/repos/octocat/test-repo1/branches"))
-                .willReturn(WireMock.aResponse()
-                        .withStatus(200)
-                        .withHeader("Content-Type", "application/json")
-                        .withBodyFile("json/test-repo1.json"))); // Change the file name as needed
-
+        //stub for userRepositoriesFoundTest
         WireMock.stubFor(WireMock.get(WireMock.urlPathMatching("/users/octocat/repos"))
                 .willReturn(WireMock.aResponse()
                         .withStatus(200)
                         .withHeader("Content-Type", "application/json")
-                        .withBodyFile("json/repos.json"))); // Change the file name as needed
+                        .withBodyFile("json/repos.json")));
 
-
+        //stub for userRepositoriesNotFoundTest
         stubFor(get(urlPathMatching("/users/nonexistentuser/repos"))
                 .willReturn(aResponse()
                         .withStatus(404)
                         .withHeader("Content-Type", "application/json")
                         .withBody("{ \"message\": \"Not Found\", \"documentation_url\": \"https://docs.github.com/rest/repos/repos#list-repositories-for-a-user\" }")));
+
+        //stub for whenAcceptHeaderIsXmlThenReceiveNotAcceptableStatus
+        stubFor(get(urlPathMatching("/api/github/users/xmltest/repos"))
+                .withHeader("Accept", equalTo("application/xml"))
+                .willReturn(aResponse()
+                        .withStatus(415)
+                        .withHeader("Content-Type", "application/json")
+                        .withBodyFile("json/xml-error.json")));
+
+    }
+
+    private void stubForRepositoryBranches(String repositoryName, String jsonFileName) {
+        WireMock.stubFor(WireMock.get(WireMock.urlPathMatching("/repos/octocat/" + repositoryName + "/branches"))
+                .willReturn(WireMock.aResponse()
+                        .withStatus(200)
+                        .withHeader("Content-Type", "application/json")
+                        .withBodyFile("json/" + jsonFileName)));
     }
 
     @Test
@@ -94,9 +84,14 @@ public class GitHubControllerIntegrationTest {
     }
 
     @Test
-    public void userRepositoriesFoundTest() throws IOException {
-        ClassPathResource resource = new ClassPathResource("__files/json/result.json");
-        String jsonContent = Files.readString(resource.getFile().toPath());
+    public void userRepositoriesFoundTest() {
+        String jsonContent;
+        try {
+            ClassPathResource resource = new ClassPathResource("__files/json/result.json");
+            jsonContent = Files.readString(resource.getFile().toPath());
+        } catch (IOException e) {
+            throw new RuntimeException("Failed to read JSON file for test", e);
+        }
 
         webTestClient.get().uri("/api/github/users/octocat/repos")
                 .accept(MediaType.APPLICATION_JSON)
@@ -104,6 +99,18 @@ public class GitHubControllerIntegrationTest {
                 .expectStatus().isOk()
                 .expectBody()
                 .json(jsonContent);
+    }
+
+    @Test
+    public void whenAcceptHeaderIsXmlThenReceiveNotAcceptableStatus() {
+         webTestClient.get().uri("/api/github/users/xmltest/repos")
+                .accept(MediaType.APPLICATION_XML)
+                .exchange()
+                .expectStatus().isEqualTo(HttpStatus.NOT_ACCEPTABLE)
+                .expectBody()
+                .jsonPath("$.status").isEqualTo(HttpStatus.NOT_ACCEPTABLE.value())
+                .jsonPath("$.Message").isEqualTo("The requested media type is not supported")
+                .returnResult();
     }
 
 }

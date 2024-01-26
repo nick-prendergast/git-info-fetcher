@@ -21,4 +21,3 @@ public class WebClientConfig {
                 .build();
     }
 }
-

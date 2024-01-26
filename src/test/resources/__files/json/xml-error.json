@@ -1,0 +1,4 @@
+{
+  "message": "Unsupported 'Accept' header: 'application/xml'. Must accept 'application/json'.",
+  "documentation_url": "https://docs.github.com/v3/media"
+}
