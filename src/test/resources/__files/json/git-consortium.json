@@ -1,0 +1,10 @@
+[
+  {
+    "name": "master",
+    "commit": {
+      "sha": "b33a9c7c02ad93f621fa38f0e9fc9e867e12fa0e",
+      "url": "https://api.github.com/repos/octocat/git-consortium/commits/b33a9c7c02ad93f621fa38f0e9fc9e867e12fa0e"
+    },
+    "protected": false
+  }
+]
