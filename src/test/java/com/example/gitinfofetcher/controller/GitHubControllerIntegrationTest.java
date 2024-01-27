@@ -61,7 +61,7 @@ public class GitHubControllerIntegrationTest {
                 .willReturn(WireMock.aResponse()
                         .withStatus(200)
                         .withHeader("Content-Type", "application/json")
-                        .withBodyFile("json/" + jsonFileName)));
+                        .withBodyFile("json/branches/" + jsonFileName)));
     }
 
     private void stubForUserRepositoryFound() {
@@ -69,7 +69,7 @@ public class GitHubControllerIntegrationTest {
                 .willReturn(WireMock.aResponse()
                         .withStatus(200)
                         .withHeader("Content-Type", "application/json")
-                        .withBodyFile("json/repos.json")));
+                        .withBodyFile("json/repos/repos.json")));
     }
 
     private void stubForUserRepositoryNotFound() {
@@ -86,7 +86,7 @@ public class GitHubControllerIntegrationTest {
                 .willReturn(aResponse()
                         .withStatus(415)
                         .withHeader("Content-Type", "application/json")
-                        .withBodyFile("json/xml-error.json")));
+                        .withBodyFile("json/error/xml-error.json")));
     }
 
     @Test
@@ -102,7 +102,7 @@ public class GitHubControllerIntegrationTest {
 
     @Test
     public void shouldReturnRepositoriesForExistingUser() {
-        String jsonContent = readJsonFromFile("__files/json/result.json");
+        String jsonContent = readJsonFromFile("__files/json/response/octocat-result.json");
         webTestClient.get().uri("/api/github/users/octocat/repos")
                 .accept(MediaType.APPLICATION_JSON)
                 .exchange()
