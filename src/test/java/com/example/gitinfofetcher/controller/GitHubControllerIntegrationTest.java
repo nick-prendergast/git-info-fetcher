@@ -28,40 +28,32 @@ public class GitHubControllerIntegrationTest {
     @Autowired
     private WebTestClient webTestClient;
 
-    @Autowired
-    private GitHubService gitHubService;
-
     @BeforeEach
     public void setUp() {
-        stubForRepositoryBranches("git-consortium", "git-consortium.json");
-        stubForRepositoryBranches("hello-worId", "hello-worId.json");
-        stubForRepositoryBranches("Hello-World", "Hello-World.json");
-        stubForRepositoryBranches("octocat.github.io", "octocat.github.io.json");
-        stubForRepositoryBranches("Spoon-Knife", "Spoon-Knife.json");
-        stubForRepositoryBranches("test-repo1", "test-repo1.json");
+        setupStubForRepositoryBranches();
+        setupStubForUserRepositories();
+    }
 
-        //stub for userRepositoriesFoundTest
-        WireMock.stubFor(WireMock.get(WireMock.urlPathMatching("/users/octocat/repos"))
-                .willReturn(WireMock.aResponse()
+    private void setupStubForRepositoryBranches() {
+        String[] repositories = {"git-consortium", "hello-worId", "Hello-World", "octocat.github.io", "Spoon-Knife", "test-repo1"};
+        for (String repo : repositories) {
+            stubForRepositoryBranches(repo, repo + ".json");
+        }
+    }
+
+    private void setupStubForUserRepositories() {
+        stubForUserRepositoryFound();
+        stubForUserRepositoryNotFound();
+        stubForUserRepositoryWithXmlHeader();
+        stubForUserRepositoryNotExisting();
+    }
+
+    private static void stubForUserRepositoryNotExisting() {
+        stubFor(WireMock.get(WireMock.urlPathMatching("/users/some-user/repos"))
+                .willReturn(aResponse()
                         .withStatus(200)
                         .withHeader("Content-Type", "application/json")
-                        .withBodyFile("json/repos.json")));
-
-        //stub for userRepositoriesNotFoundTest
-        stubFor(get(urlPathMatching("/users/nonexistentuser/repos"))
-                .willReturn(aResponse()
-                        .withStatus(404)
-                        .withHeader("Content-Type", "application/json")
-                        .withBody("{ \"message\": \"Not Found\", \"documentation_url\": \"https://docs.github.com/rest/repos/repos#list-repositories-for-a-user\" }")));
-
-        //stub for whenAcceptHeaderIsXmlThenReceiveNotAcceptableStatus
-        stubFor(get(urlPathMatching("/api/github/users/xmltest/repos"))
-                .withHeader("Accept", equalTo("application/xml"))
-                .willReturn(aResponse()
-                        .withStatus(415)
-                        .withHeader("Content-Type", "application/json")
-                        .withBodyFile("json/xml-error.json")));
-
+                        .withBody("[]")));
     }
 
     private void stubForRepositoryBranches(String repositoryName, String jsonFileName) {
@@ -72,8 +64,33 @@ public class GitHubControllerIntegrationTest {
                         .withBodyFile("json/" + jsonFileName)));
     }
 
+    private void stubForUserRepositoryFound() {
+        WireMock.stubFor(WireMock.get(WireMock.urlPathMatching("/users/octocat/repos"))
+                .willReturn(WireMock.aResponse()
+                        .withStatus(200)
+                        .withHeader("Content-Type", "application/json")
+                        .withBodyFile("json/repos.json")));
+    }
+
+    private void stubForUserRepositoryNotFound() {
+        stubFor(get(urlPathMatching("/users/nonexistentuser/repos"))
+                .willReturn(aResponse()
+                        .withStatus(404)
+                        .withHeader("Content-Type", "application/json")
+                        .withBody("{ \"message\": \"Not Found\", \"documentation_url\": \"https://docs.github.com/rest/repos/repos#list-repositories-for-a-user\" }")));
+    }
+
+    private void stubForUserRepositoryWithXmlHeader() {
+        stubFor(get(urlPathMatching("/api/github/users/xmltest/repos"))
+                .withHeader("Accept", equalTo("application/xml"))
+                .willReturn(aResponse()
+                        .withStatus(415)
+                        .withHeader("Content-Type", "application/json")
+                        .withBodyFile("json/xml-error.json")));
+    }
+
     @Test
-    public void userRepositoriesNotFoundTest() {
+    public void shouldReturnNotFoundForNonExistentUserRepositories() {
         webTestClient.get().uri("/api/github/users/nonexistentuser/repos")
                 .accept(MediaType.APPLICATION_JSON)
                 .exchange()
@@ -84,15 +101,8 @@ public class GitHubControllerIntegrationTest {
     }
 
     @Test
-    public void userRepositoriesFoundTest() {
-        String jsonContent;
-        try {
-            ClassPathResource resource = new ClassPathResource("__files/json/result.json");
-            jsonContent = Files.readString(resource.getFile().toPath());
-        } catch (IOException e) {
-            throw new RuntimeException("Failed to read JSON file for test", e);
-        }
-
+    public void shouldReturnRepositoriesForExistingUser() {
+        String jsonContent = readJsonFromFile("__files/json/result.json");
         webTestClient.get().uri("/api/github/users/octocat/repos")
                 .accept(MediaType.APPLICATION_JSON)
                 .exchange()
@@ -102,15 +112,31 @@ public class GitHubControllerIntegrationTest {
     }
 
     @Test
-    public void whenAcceptHeaderIsXmlThenReceiveNotAcceptableStatus() {
-         webTestClient.get().uri("/api/github/users/xmltest/repos")
+    public void shouldReturnNotAcceptableForXmlHeaderRequest() {
+        webTestClient.get().uri("/api/github/users/xmltest/repos")
                 .accept(MediaType.APPLICATION_XML)
                 .exchange()
                 .expectStatus().isEqualTo(HttpStatus.NOT_ACCEPTABLE)
                 .expectBody()
                 .jsonPath("$.status").isEqualTo(HttpStatus.NOT_ACCEPTABLE.value())
-                .jsonPath("$.Message").isEqualTo("The requested media type is not supported")
-                .returnResult();
+                .jsonPath("$.Message").isEqualTo("The requested media type is not supported");
     }
 
+    @Test
+    public void userExistsButHasNoRepositoriesTest() {
+        webTestClient.get().uri("/api/github/users/some-user/repos")
+                .accept(MediaType.APPLICATION_JSON)
+                .exchange()
+                .expectStatus().isOk()
+                .expectBody().json("[]");
+    }
+
+    private String readJsonFromFile(String path) {
+        try {
+            ClassPathResource resource = new ClassPathResource(path);
+            return Files.readString(resource.getFile().toPath());
+        } catch (IOException e) {
+            throw new RuntimeException("Failed to read JSON file for test", e);
+        }
+    }
 }
