@@ -1,0 +1,101 @@
+openapi: 3.0.0
+info:
+  title: GitHub Information Fetcher API
+  description: API for fetching information from GitHub about users and their repositories.
+  version: 1.0.0
+servers:
+  - url: http://localhost:8080/api/github
+
+paths:
+  /users/{username}/repos:
+    get:
+      summary: List User Repositories
+      description: Retrieves a list of repositories along with their branches for a given GitHub username. Responds only in JSON format.
+      parameters:
+        - in: path
+          name: username
+          required: true
+          schema:
+            type: string
+          description: The GitHub username for which to retrieve the repositories.
+      responses:
+        '200':
+          description: Successfully retrieved the list of repositories and branches.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/RepositoryBranchesDto'
+              example:  # Example for the 200 response
+                - repositoryName: "hello-worId"
+                  ownerLogin: "octocat"
+                  branches:
+                    - name: "master"
+                      commit:
+                        sha: "7e068727fdb347b685b658d2981f8c85f7bf0585"
+        '404':
+          description: The user was not found on GitHub.
+          content:
+            application/json:
+              example:
+                message: "Not Found"
+                status: 404
+        '406':
+          description: The requested media type is not supported, only application/json is supported.
+          content:
+            application/json:
+              example:
+                Message: "The requested media type is not supported"
+                status: 406
+
+components:
+  schemas:
+    RepositoryBranchesDto:
+      type: object
+      properties:
+        repositoryName:
+          type: string
+          description: The name of the repository.
+        ownerLogin:  # Changed 'owner' to 'ownerLogin' to match example
+          type: string
+          description: The login of the repository owner.
+        branches:
+          type: array
+          items:
+            $ref: '#/components/schemas/Branch'
+      required:
+        - repositoryName
+        - ownerLogin  # Changed 'owner' to 'ownerLogin' to match example
+        - branches
+
+    Branch:
+      type: object
+      properties:
+        name:
+          type: string
+          description: The name of the branch.
+        commit:
+          type: object
+          properties:
+            sha:
+              type: string
+              description: The SHA of the latest commit on the branch.
+          required:
+            - sha
+      required:
+        - name
+        - commit
+
+    ErrorResponse:
+      type: object
+      properties:
+        status:
+          type: integer
+          description: The HTTP status code of the error response.
+        Message:
+          type: string
+          description: A message describing the error.
+      required:
+        - status
+        - Message

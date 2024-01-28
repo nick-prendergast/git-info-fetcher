@@ -32,7 +32,7 @@ public class CustomExceptionHandler {
             logger.error(errorMessage, e);
         }
         body.put("status", ex.getStatusCode().value());
-        body.put("message", errorMessage);
+        body.put("Message", errorMessage);
 
         return new ResponseEntity<>(body, HttpStatus.valueOf(ex.getStatusCode().value()));
     }

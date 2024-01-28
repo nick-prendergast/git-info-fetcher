@@ -97,12 +97,12 @@ public class GitHubControllerIntegrationTest {
                 .expectStatus().isNotFound()
                 .expectBody()
                 .jsonPath("$.status").isEqualTo(404)
-                .jsonPath("$.message").isEqualTo("Not Found");
+                .jsonPath("$.Message").isEqualTo("Not Found");
     }
 
     @Test
     public void shouldReturnRepositoriesForExistingUser() {
-        String jsonContent = readJsonFromFile("__files/json/response/octocat-result.json");
+        String jsonContent = readJsonFromFile("__files/json/response/octocat-response.json");
         webTestClient.get().uri("/api/github/users/octocat/repos")
                 .accept(MediaType.APPLICATION_JSON)
                 .exchange()
@@ -129,6 +129,14 @@ public class GitHubControllerIntegrationTest {
                 .exchange()
                 .expectStatus().isOk()
                 .expectBody().json("[]");
+    }
+
+    @Test
+    public void testListUserRepositoriesWithEmptyUsername() {
+        webTestClient.get().uri("/api/github/users//repos")
+                .exchange()
+                .expectStatus().isEqualTo(HttpStatus.NOT_FOUND)
+                .expectBody().isEmpty();
     }
 
     private String readJsonFromFile(String path) {
