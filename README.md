@@ -15,7 +15,7 @@ Ensure Docker is installed on your machine. For installation instructions, refer
 
 1. **Clone the Repository**
     ```sh
-    git clone https://your-repository-url.git
+    git clone https://github.com/nick-prendergast/git-info-fetcher.git
     cd git-info-fetcher
     ```
 
@@ -39,7 +39,6 @@ Example Request:
 ```http
 GET /api/github/users/octocat/repos
 Accept: application/json
-### Swagger UI
 ```
 
 ## Swagger UI
