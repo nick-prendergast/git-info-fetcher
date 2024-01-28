@@ -1,6 +1,6 @@
 package com.example.gitinfofetcher.controller;
 
-import com.example.gitinfofetcher.TestConfig;
+import com.example.gitinfofetcher.WebClientTestConfig;
 import com.example.gitinfofetcher.config.WebFluxErrorHandlingConfig;
 import com.example.gitinfofetcher.service.GitHubService;
 import com.github.tomakehurst.wiremock.client.WireMock;
@@ -18,10 +18,14 @@ import org.springframework.test.web.reactive.server.WebTestClient;
 import java.io.IOException;
 import java.nio.file.Files;
 
-import static com.github.tomakehurst.wiremock.client.WireMock.*;
+import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
+import static com.github.tomakehurst.wiremock.client.WireMock.stubFor;
+import static com.github.tomakehurst.wiremock.client.WireMock.urlPathMatching;
+import static com.github.tomakehurst.wiremock.client.WireMock.get;
+import static com.github.tomakehurst.wiremock.client.WireMock.equalTo;
 
 @WebFluxTest(controllers = GitHubController.class)
-@Import({GitHubService.class, TestConfig.class, WebFluxErrorHandlingConfig.class})
+@Import({GitHubService.class, WebClientTestConfig.class, WebFluxErrorHandlingConfig.class})
 @WireMockTest(httpPort = 8089)
 public class GitHubControllerIntegrationTest {
 
@@ -57,16 +61,16 @@ public class GitHubControllerIntegrationTest {
     }
 
     private void stubForRepositoryBranches(String repositoryName, String jsonFileName) {
-        WireMock.stubFor(WireMock.get(WireMock.urlPathMatching("/repos/octocat/" + repositoryName + "/branches"))
-                .willReturn(WireMock.aResponse()
+        stubFor(WireMock.get(WireMock.urlPathMatching("/repos/octocat/" + repositoryName + "/branches"))
+                .willReturn(aResponse()
                         .withStatus(200)
                         .withHeader("Content-Type", "application/json")
                         .withBodyFile("json/branches/" + jsonFileName)));
     }
 
     private void stubForUserRepositoryFound() {
-        WireMock.stubFor(WireMock.get(WireMock.urlPathMatching("/users/octocat/repos"))
-                .willReturn(WireMock.aResponse()
+        stubFor(WireMock.get(WireMock.urlPathMatching("/users/octocat/repos"))
+                .willReturn(aResponse()
                         .withStatus(200)
                         .withHeader("Content-Type", "application/json")
                         .withBodyFile("json/repos/repos.json")));

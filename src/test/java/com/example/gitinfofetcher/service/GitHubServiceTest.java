@@ -34,44 +34,36 @@ public class GitHubServiceTest {
 
     @Test
     public void testListUserRepositories() {
-        // Given
         String username = "octocat";
         GitHubUser owner = new GitHubUser("octocat");
         boolean fork = false;
 
-        // Creating mock branches
         List<GitHubBranch> branches = Arrays.asList(
                 new GitHubBranch("master", new GitHubCommit("master-commit-sha")),
                 new GitHubBranch("develop", new GitHubCommit("develop-commit-sha"))
         );
 
-        // Creating a mock repository with branches
         GitHubRepository mockRepo = new GitHubRepository("repository-name", owner, fork, branches);
 
-        // Mocking the web client behavior
         when(webClient.get()).thenReturn(requestHeadersUriSpec);
         when(requestHeadersUriSpec.uri("/users/{username}/repos", username)).thenReturn(requestHeadersSpec);
         when(requestHeadersSpec.retrieve()).thenReturn(responseSpec);
         when(responseSpec.bodyToFlux(GitHubRepository.class)).thenReturn(Flux.just(mockRepo));
 
-        // Mocking the GitHubService
         GitHubService service = new GitHubService(webClient);
 
-        // When
         Flux<GitHubRepository> result = service.listUserRepositories(username);
 
-        // Then
         assertNotNull(result);
         StepVerifier.create(result)
                 .expectNextMatches(repo ->
-                        repo.getName().equals("repository-name") &&
-                                repo.getOwner().equals(owner) &&
-                                !repo.isFork() &&
-                                repo.getBranches().equals(branches)
+                        repo.name().equals("repository-name") &&
+                                repo.owner().equals(owner) &&
+                                !repo.fork() &&
+                                repo.branches().equals(branches)
                 )
                 .verifyComplete();
 
-        // Verify that the web client's get method was called
         verify(webClient).get();
     }
 
@@ -79,7 +71,6 @@ public class GitHubServiceTest {
 
     @Test
     void testListUserRepositoriesHandlesWebClientError() {
-        // Arrange
         String username = "octocat";
         WebClientResponseException notFoundException = WebClientResponseException.create(
                 404, "Not Found", HttpHeaders.EMPTY, null, null);
@@ -91,7 +82,6 @@ public class GitHubServiceTest {
 
         GitHubService service = new GitHubService(webClient);
 
-        // Act & Assert
         StepVerifier.create(service.listUserRepositories(username))
                 .expectError(WebClientResponseException.NotFound.class)
                 .verify();
@@ -99,7 +89,6 @@ public class GitHubServiceTest {
 
     @Test
     void testListUserRepositoriesWithNoRepos() {
-        // Arrange
         String username = "newuser";
         when(webClient.get()).thenReturn(requestHeadersUriSpec);
         when(requestHeadersUriSpec.uri("/users/{username}/repos", username)).thenReturn(requestHeadersSpec);
@@ -108,15 +97,11 @@ public class GitHubServiceTest {
 
         GitHubService service = new GitHubService(webClient);
 
-        // Act
         Flux<GitHubRepository> result = service.listUserRepositories(username);
 
-        // Assert
         StepVerifier.create(result)
-                .expectNextCount(0) // expect no items
-                .verifyComplete(); // verify that the flux completes
+                .expectNextCount(0)
+                .verifyComplete();
     }
-
-
 
 }

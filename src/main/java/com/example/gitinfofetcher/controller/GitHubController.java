@@ -1,6 +1,6 @@
 package com.example.gitinfofetcher.controller;
 
-import com.example.gitinfofetcher.Dto.RepositoryBranchesDto;
+import com.example.gitinfofetcher.dto.RepositoryBranchesDto;
 import com.example.gitinfofetcher.service.GitHubService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -27,12 +27,11 @@ public class GitHubController {
         logger.info("Request received to list repositories for user: {}", username);
 
         return gitHubService.listUserRepositories(username)
-                .flatMap(repo -> gitHubService.getRepositoryBranches(repo.getOwner().login(), repo.getName())
+                .flatMap(repo -> gitHubService.getRepositoryBranches(repo.owner().login(), repo.name())
                         .collectList()
-                        .map(branches -> new RepositoryBranchesDto(repo.getName(), repo.getOwner().login(), branches))
+                        .map(branches -> new RepositoryBranchesDto(repo.name(), repo.owner().login(), branches))
                 )
                 .doOnComplete(() -> logger.info("Completed listing repositories for user: {}", username))
                 .doOnError(error -> logger.error("Error occurred while listing repositories for user: {}", username, error));
     }
 }
-

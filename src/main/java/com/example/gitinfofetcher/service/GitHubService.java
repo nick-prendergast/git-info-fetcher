@@ -24,8 +24,8 @@ public class GitHubService {
                 .uri("/users/{username}/repos", username)
                 .retrieve()
                 .bodyToFlux(GitHubRepository.class)
-                .filter(repo -> !repo.isFork())
-                .doOnNext(repo -> logger.debug("Received repo: {}", repo.getName()))
+                .filter(repo -> !repo.fork())
+                .doOnNext(repo -> logger.debug("Received repo: {}", repo.name()))
                 .doOnError(e -> logger.error("Error fetching repositories for user: {}", username, e));
     }
 
@@ -35,8 +35,7 @@ public class GitHubService {
                 .uri("/repos/{owner}/{repo}/branches", owner, repoName)
                 .retrieve()
                 .bodyToFlux(GitHubBranch.class)
-                .doOnNext(branch -> logger.info("Received branch: {} in repo: {}/{}", branch.getName(), owner, repoName))
+                .doOnNext(branch -> logger.info("Received branch: {} in repo: {}/{}", branch.name(), owner, repoName))
                 .doOnError(e -> logger.error("Error fetching branches for repository: {}/{}", owner, repoName, e));
     }
 }
-

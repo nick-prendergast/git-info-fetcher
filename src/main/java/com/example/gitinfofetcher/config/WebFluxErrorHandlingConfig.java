@@ -50,6 +50,4 @@ public class WebFluxErrorHandlingConfig {
             return Mono.error(ex);
         };
     }
-
 }
-
