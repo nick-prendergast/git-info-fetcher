@@ -2,6 +2,7 @@ package com.example.gitinfofetcher.service;
 
 import com.example.gitinfofetcher.domain.GitHubBranch;
 import com.example.gitinfofetcher.domain.GitHubRepository;
+import com.example.gitinfofetcher.dto.RepositoryBranchesDto;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
@@ -18,7 +19,17 @@ public class GitHubService {
         this.webClient = webClient;
     }
 
-    public Flux<GitHubRepository> listUserRepositories(String username) {
+    public Flux<RepositoryBranchesDto> listUserRepositoriesWithBranches(String username) {
+        return listUserRepositories(username)
+                .flatMap(repo -> getRepositoryBranches(repo.owner().login(), repo.name())
+                        .collectList()
+                        .map(branches -> new RepositoryBranchesDto(repo.name(), repo.owner().login(), branches))
+                )
+                .doOnComplete(() -> logger.info("Completed fetching repositories with branches for user: {}", username))
+                .doOnError(error -> logger.error("Error occurred while fetching repositories with branches for user: {}", username, error));
+    }
+
+    private Flux<GitHubRepository> listUserRepositories(String username) {
         logger.info("Fetching repositories for user: {}", username);
         return webClient.get()
                 .uri("/users/{username}/repos", username)
@@ -29,7 +40,7 @@ public class GitHubService {
                 .doOnError(e -> logger.error("Error fetching repositories for user: {}", username, e));
     }
 
-    public Flux<GitHubBranch> getRepositoryBranches(String owner, String repoName) {
+    private Flux<GitHubBranch> getRepositoryBranches(String owner, String repoName) {
         logger.info("Fetching branches for repository: {}/{}", owner, repoName);
         return webClient.get()
                 .uri("/repos/{owner}/{repo}/branches", owner, repoName)

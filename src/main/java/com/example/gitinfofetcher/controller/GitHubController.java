@@ -24,14 +24,7 @@ public class GitHubController {
 
     @GetMapping("/users/{username}/repos")
     public Flux<RepositoryBranchesDto> listUserRepos(@PathVariable String username) {
-        logger.info("Request received to list repositories for user: {}", username);
-
-        return gitHubService.listUserRepositories(username)
-                .flatMap(repo -> gitHubService.getRepositoryBranches(repo.owner().login(), repo.name())
-                        .collectList()
-                        .map(branches -> new RepositoryBranchesDto(repo.name(), repo.owner().login(), branches))
-                )
-                .doOnComplete(() -> logger.info("Completed listing repositories for user: {}", username))
-                .doOnError(error -> logger.error("Error occurred while listing repositories for user: {}", username, error));
+        logger.info("Request received to list repositories with branches for user: {}", username);
+        return gitHubService.listUserRepositoriesWithBranches(username);
     }
 }
