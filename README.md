@@ -18,13 +18,19 @@ Ensure Docker is installed on your machine. For installation instructions, refer
     git clone https://github.com/nick-prendergast/git-info-fetcher.git
     cd git-info-fetcher
     ```
+   
+2. **Build the Project with Maven**
 
-2. **Build the Docker Image**
+   ```sh
+   mvn clean package
+   ```
+
+3. **Build the Docker Image**
     ```sh
     docker build -t git-info-fetcher .
     ```
 
-3. **Run the Docker Container**
+4. **Run the Docker Container**
     ```sh
     docker run -p 8080:8080 git-info-fetcher
     ```
